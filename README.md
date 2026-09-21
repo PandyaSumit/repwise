@@ -213,13 +213,3 @@ your dev data.
 ├── resources/          exercises.csv, the seed catalogue
 └── tests/
 ```
-
-## Credits
-
-Repwise is a fork of [gymhero](https://github.com/JakubPluta/gymhero) by
-[@JakubPluta](https://github.com/JakubPluta), released under the MIT license. Thanks
-for the groundwork.
-
-## License
-
-[MIT](LICENSE).
