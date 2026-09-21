@@ -1,0 +1,101 @@
+[tools]
+python = "3.13"
+uv = "0.12.3"
+node = "22"
+
+[env]
+_.python.venv = { path = ".venv", create = true }
+
+# --- dev workflow ---------------------------------------------------------
+
+[tasks.install]
+description = "Install dependencies and git hooks"
+run = ["uv sync --frozen --all-groups", "pre-commit install"]
+
+[tasks.lint]
+description = "Check formatting, lint and types"
+run = ["ruff format --check", "ruff check", "mypy"]
+
+[tasks.lint-fix]
+description = "Format and auto-fix lint issues"
+run = ["ruff format", "ruff check --fix"]
+
+[tasks.test]
+description = "Run the test suite (spins a Postgres testcontainer)"
+# COVERAGE_CORE=ctrace + concurrency=greenlet (pyproject) so coverage traces
+# lines after async SQLAlchemy awaits (default sysmon core under-reports them).
+env = { ENV = "test", COVERAGE_CORE = "ctrace" }
+run = "pytest --cov=gymhero --cov-report=term-missing tests/"
+
+[tasks.test-cov]
+description = "Run the test suite with coverage"
+env = { ENV = "test", COVERAGE_CORE = "ctrace" }
+run = "pytest --cov=gymhero tests/"
+
+# --- docker stack ---------------------------------------------------------
+
+[tasks.up]
+description = "Build and start the app + db stack"
+run = "docker compose up -d --build"
+
+[tasks.down]
+description = "Stop the stack"
+run = "docker compose down"
+
+[tasks.migrate]
+description = "Apply Alembic migrations inside the app container"
+run = "docker compose exec app alembic upgrade head"
+
+[tasks.makemigration]
+description = "Autogenerate an Alembic revision"
+run = 'docker compose exec app alembic revision --autogenerate -m "new migration"'
+
+[tasks.seed]
+description = "Seed the dev database"
+run = "docker compose exec app python -m scripts.seed --env=dev"
+
+[tasks.dev]
+description = "Build, start (migrations run via the migrate service) and seed the dev stack"
+run = [
+    "docker compose up -d --build",
+    "docker compose exec app python -m scripts.seed --env=dev",
+]
+
+# --- frontend -------------------------------------------------------------
+
+[tasks.fe-install]
+description = "Install frontend dependencies"
+dir = "frontend"
+run = "npm install"
+
+[tasks.fe-gen]
+description = "Regenerate the typed API client from the running backend's OpenAPI"
+dir = "frontend"
+run = "npm run gen:api"
+
+[tasks.fe-dev]
+description = "Start the frontend dev server (proxies /api to :8000)"
+dir = "frontend"
+run = "npm run dev"
+
+[tasks.fe-build]
+description = "Type-check and build the frontend for production"
+dir = "frontend"
+run = "npm run build"
+
+[tasks.fe-lint]
+description = "Lint and format-check the frontend"
+dir = "frontend"
+run = ["npm run lint", "npm run format:check"]
+
+[tasks.fe-test]
+description = "Run the frontend unit/component tests (Vitest)"
+dir = "frontend"
+run = "npm run test"
+
+[tasks.dev-full]
+description = "Bring up the backend stack (docker + seed), then run the frontend dev server"
+run = [
+    "mise run dev",
+    "mise run fe-dev",
+]
