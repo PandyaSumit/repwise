@@ -1,31 +1,63 @@
-# GymHero
+<h1 align="center">Repwise</h1>
 
-Simple application to manage your gym training workouts.
-You have the flexibility to create your own exercises, you can develop custom training units and these units can be easily integrated into personalized training plans. You can manage your training units by adding or removing exercises as needed, each with an optional prescription — a list of sets, every set with its own reps and weight.
-By default application contains database of more than 1000 exercises.
+<p align="center">
+  A strength-training API and dashboard: build an exercise library, compose it into
+  training units with real set-by-set prescriptions, and group those into plans.
+</p>
 
-### Frontend
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
+  <img alt="SQLAlchemy" src="https://img.shields.io/badge/SQLAlchemy%202.0-D71F00?logo=sqlalchemy&logoColor=white">
+  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
+</p>
 
-A modern SPA (Vite + React + TypeScript, Tailwind + shadcn/ui, TanStack Router/Query)
-lives in [`frontend/`](./frontend). It is fully type-safe against this API's OpenAPI
-schema. See [`frontend/README.md`](./frontend/README.md) for setup — in short:
-`mise run dev` (backend on :8000), then `cd frontend && npm install && npm run gen:api && npm run dev`.
+---
 
+## What it does
 
-### Motivation
-To build an CRUD API with FastAPI, SQLAlchemy, Postgres, Docker
+Repwise models the way training actually gets written down.
 
+An **exercise** is a movement, classified by the body part it targets, its type, and
+its difficulty level. The app ships with a seed catalogue of **over 1,000 exercises**,
+and you can add your own on top.
 
-#### Data Models
-- Exercise 
-- ExerciseType 
-- Level
-- BodyPart
-- TrainingUnit
-- TrainingPlan
-- User
+A **training unit** is one session: a list of exercises, each carrying an ordered
+**prescription** — set 1 is 8 reps at 60 kg, set 2 is 8 at 65 kg, and so on. A
+**training plan** groups units into a programme.
 
-**Entity Relationship Diagram**
+Everything is owned and scoped per user. You only ever see your own exercises, units
+and plans, plus the shared seed catalogue.
+
+## The interesting part of the data model
+
+The obvious way to link units and exercises is a plain many-to-many table. That falls
+apart the moment you want per-set prescriptions, because the sets belong to *this
+exercise in this unit*, not to the exercise globally.
+
+So the join is an **association object** with its own surrogate key:
+
+```
+training_units
+      |
+      | 1..n
+      v
+training_unit_exercise  ───►  exercises
+      |   (unique on training_unit_id + exercise_id)
+      | 1..n
+      v
+prescribed_set          (set_number, reps, weight)
+```
+
+`TrainingUnitExercise` carries an `id` precisely so `PrescribedSet` rows have
+something to point at. Sets are ordered by `set_number` and cascade with
+`delete-orphan`, so rewriting a prescription is a single assignment rather than a
+manual diff.
+
+Full entity relationships:
 
 ```mermaid
 erDiagram
@@ -34,370 +66,160 @@ erDiagram
     users          ||--o{ training_plans              : creates
 
     body_parts     ||--o{ exercises                   : targets
-    exercise_types ||--o{ exercises                   : types
+    exercise_types ||--o{ exercises                   : classifies
     levels         ||--o{ exercises                   : rates
 
-    training_units ||--o{ training_unit_exercise      : has
-    exercises      ||--o{ training_unit_exercise      : in
-    training_unit_exercise ||--o{ prescribed_set      : prescribes
+    training_units         ||--o{ training_unit_exercise : contains
+    exercises              ||--o{ training_unit_exercise : appears_in
+    training_unit_exercise ||--o{ prescribed_set         : prescribes
 
-    training_plans ||--o{ training_plan_training_unit : has
-    training_units ||--o{ training_plan_training_unit : in
-
-    users {
-        int      id              PK
-        string   email           UK
-        string   full_name
-        string   hashed_password
-        bool     is_active
-        bool     is_superuser
-        int      token_version
-        datetime created_at
-        datetime updated_at
-    }
-    exercises {
-        int      id                  PK
-        string   name                UK
-        string   description
-        int      target_body_part_id FK
-        int      exercise_type_id    FK
-        int      level_id            FK
-        int      owner_id            FK
-        datetime created_at
-        datetime updated_at
-    }
-    exercise_types {
-        int      id         PK
-        string   name       UK
-        datetime created_at
-        datetime updated_at
-    }
-    levels {
-        int      id         PK
-        string   name       UK
-        datetime created_at
-        datetime updated_at
-    }
-    body_parts {
-        int      id         PK
-        string   name       UK
-        datetime created_at
-        datetime updated_at
-    }
-    training_units {
-        int      id          PK
-        string   name        "unique per owner"
-        string   description
-        int      owner_id    FK
-        datetime created_at
-        datetime updated_at
-    }
-    training_plans {
-        int      id          PK
-        string   name        "unique per owner"
-        string   description
-        int      owner_id    FK
-        datetime created_at
-        datetime updated_at
-    }
-    training_unit_exercise {
-        int id               PK
-        int training_unit_id FK "unique per (unit, exercise)"
-        int exercise_id      FK
-    }
-    prescribed_set {
-        int   id                        PK
-        int   training_unit_exercise_id FK
-        int   set_number
-        int   reps                      "nullable"
-        float weight                    "nullable"
-    }
-    training_plan_training_unit {
-        int training_plan_id PK, FK
-        int training_unit_id PK, FK
-    }
+    training_plans ||--o{ training_plan_training_unit : contains
+    training_units ||--o{ training_plan_training_unit : appears_in
 ```
 
-#### Core technologies
-- FastAPI - web framework for building APIs with Python 3.8+ based on standard Python type hints.
-- SQLAlchemy - Object Relational Mapper
-- Pydantic -  Data validation library for Python and FastAPI models
-- Uvicorn - ASGI web server implementation for Python
-- Alembic - lightweight database migration tool for usage with the SQLAlchemy Database Toolkit for Python.
-- Docker - tool to package and run an application in a loosely isolated environment
-- Docker Compose - tool for defining and running multi-container Docker applications
-- Postgres - open source object-relational database
-- For testing:
-    - pytest
-    - pytest-cov
-    - pytest-mock
-- For development
-    - mise - toolchain manager (pins Python + uv)
-    - uv - dependency management and virtualenvs
-    - ruff - linting and formatting
-    - mypy - static type checking
-    - pre-commit
+## How the backend is layered
 
-### Implemented functionalities
-- JWT Authentication
-- Password Hashing
-- Login & Register Endpoints
-- ORM Objects representing SQL tables and relationships
-- Pydantic schemas
-- CRUD module for reading, updating, deleting objects in/from database 
-- Pagination
-- Dependencies - superuser, active user, database
-- Initialization scripts
-- Separate database and env for testing
-
-
-
-## Define use cases:
-
-> All API routes are served under the **`/api/v1`** prefix — e.g. `GET /api/v1/exercises/all`.
-> (`/health`, `/ready` and the Swagger docs at `/docs` are not prefixed.)
-
-### Exercises
-
-| Routes     | Method | Endpoint                 | Access                 |
-|------------|--------|--------------------------|------------------------|
-| /exercises | GET    | /all                     | Active User            |
-| /exercises | GET    | /my                      | Owner                  |
-| /exercises | GET    | /{exercise_id}           | Active User            |
-| /exercises | DELETE | /{exercise_id}           | Superuser, Owner       |
-| /exercises | PATCH  | /{exercise_id}           | Superuser, Owner       |
-| /exercises | GET    | /name/{exercise_name}    | Active User            |
-| /exercises | POST   |                          | Active User            |
-
-### ExerciseType
-
-| Routes          | Method  | Endpoint                  | Access                 |
-|------------------|--------|---------------------------|------------------------|
-| /exercise-types | GET     | /all                      | All                    |
-| /exercise-types | GET     | /{exercise_type_id}       | All                    |
-| /exercise-types | DELETE  | /{exercise_type_id}       | Superuser              |
-| /exercise-types | PUT     | /{exercise_type_id}       | Superuser              |
-| /exercise-types | GET     | /name/{exercise_type_name}| All                    |
-| /exercise-types | POST    |                           | Superuser              |
-
-
-### Levels
-
-| Routes           | Method | Endpoint           | Access     |
-|------------------|--------|--------------------|------------|
-| /levels          | GET    | /all               | All        |
-| /levels          | GET    | /{level_id}        | All        |
-| /levels          | DELETE | /{level_id}        | Superuser  |
-| /levels          | PUT    | /{level_id}        | Superuser  |
-| /levels          | GET    | /name/{level_name} | All        |
-| /levels          | POST   |                    | Superuser  |
-
-
-### Body Parts
-| Routes           | Method | Endpoint              | Access     |
-|------------------|--------|-----------------------|------------|
-| /body-parts      | GET    | /all                  | All        |
-| /body-parts      | GET    | /{bodypart_id}        | All        |
-| /body-parts      | DELETE | /{bodypart_id}        | Superuser  |
-| /body-parts      | PUT    | /{bodypart_id}        | Superuser  |
-| /body-parts      | GET    | /name/{bodypart_name} | All        |
-| /body-parts      | POST   |                       | Superuser  |
-
-### Users
-
-
-| Routes          | Method | Endpoint           | Access     |
-|-----------------|--------|--------------------|------------|
-| /users          | GET    | /all               | Superuser  |
-| /users          | GET    | /{user_id}         | Superuser  |
-| /users          | DELETE | /{user_id}         | Superuser  |
-| /users          | PUT    | /{user_id}         | Superuser  |
-| /users          | GET    | /email/{email}     | Superuser  |
-| /users          | POST   |                    | Superuser  |
-
-
-### Auth
-| Routes         | Method  | Endpoint           | Access     |
-|----------------|---------|--------------------|------------|
-| /auth          | POST    | /login             | All        |
-| /auth          | POST    | /register          | All        |
-| /auth          | POST    | /refresh           | All          |
-| /auth          | POST    | /logout            | Active User  |
-
-
-### Training Plans
-
-| Routes           | Method  | Endpoint                                                      | Access            |
-|------------------|---------|----------------------------------------------------------------|------------------|
-| /training-plans  | GET     | /all                                                          | Superuser         |
-| /training-plans  | GET     | /all/my                                                       | Owner, Superuser  |
-| /training-plans  | GET     | /{training_plan_id}                                           | Owner, Superuser  |
-| /training-plans  | GET     | /name/{training_plan_name}                                    | Owner, Superuser  |
-| /training-plans  | GET     | /{training_plan_id}/training-units                            | Owner, Superuser  |
-| /training-plans  | DELETE  | /{training_plan_id}                                           | Owner, Superuser  |
-| /training-plans  | PUT     | /{training_plan_id}                                           | Owner, Superuser  |
-| /training-plans  | POST    |                                                               | Owner, Superuser  |
-| /training-plans  | PUT     | /{training_plan_id}/training-units/{training_unit_id}         | Owner, Superuser  |
-| /training-plans  | DELETE  | /{training_plan_id}/training-units/{training_unit_id}         | Owner, Superuser  |
-
-
-### Training Units
-
-| Routes           | Method  | Endpoint                                            | Access            |
-|------------------|---------|-----------------------------------------------------|-------------------|
-| /training-units  | GET     | /all                                                | Superuser         |
-| /training-units  | GET     | /all/my                                             | Owner, Superuser  |
-| /training-units  | GET     | /{training_unit_id}                                 | Owner, Superuser  |
-| /training-units  | GET     | /name/{training_unit_name}                          | Owner, Superuser  |
-| /training-units  | GET     | /{training_unit_id}/exercises                       | Owner, Superuser  |
-| /training-units  | DELETE  | /{training_unit_id}                                 | Owner, Superuser  |
-| /training-units  | PUT     | /{training_unit_id}                                 | Owner, Superuser  |
-| /training-units  | POST    |                                                     | Owner, Superuser  |
-| /training-units  | PUT     | /{training_unit_id}/exercises/{exercise_id}         | Owner, Superuser  |
-| /training-units  | PATCH   | /{training_unit_id}/exercises/{exercise_id}         | Owner, Superuser  |
-| /training-units  | DELETE  | /{training_unit_id}/exercises/{exercise_id}         | Owner, Superuser  |
-
-
-
-### Private superuser endpoints
-
-| Routes           | Method  | Endpoint                                            | Access     |
-|------------------|---------|-----------------------------------------------------|------------|
-| /training-units  | GET     | /name/{training_unit_name}/superuser                | Superuser  |
-| /training-plans  | GET     | /name/{training_plan_name}/superuser                | Superuser  |
-
-
-
-## How to run
-
-### You should have
-- Running Docker
-- [mise](https://mise.jdx.dev) — manages Python + uv and runs the project tasks (`mise run <task>`)
-
-
-clone repository:
-
-```bash
-git clone https://github.com/JakubPluta/gymhero.git
 ```
-and navigate to cloned project
+routes/      HTTP only — validate, delegate, serialise
+   |
+services/    business rules, ownership checks, orchestration
+   |
+crud/        generic async repository over SQLAlchemy
+   |
+models/      declarative mappings
+```
 
-build and run project:
+Two decisions worth knowing about if you read the code:
+
+- **The data layer is async end to end** — `asyncpg`, `AsyncSession`, async CRUD. The
+  connection pool is sized explicitly rather than left on defaults.
+- **Relationships the response schema embeds use `selectin` eager loading.**
+  `ExerciseInDB` nests body part, type and level as objects, so those must be loaded
+  anywhere an exercise is returned. `selectin` batches them into one query per
+  relationship instead of N+1. `owner` deliberately stays lazy, because responses
+  expose `owner_id` only and never the user row.
+
+## Tech stack
+
+| Layer | Choice |
+| --- | --- |
+| API | FastAPI, Pydantic v2, pagination helpers |
+| ORM | SQLAlchemy 2.0 (async), Alembic migrations |
+| Database | PostgreSQL, `asyncpg` driver |
+| Auth | JWT access and refresh tokens, `pwdlib`/bcrypt hashing, token versioning |
+| Frontend | React 19, TypeScript, Vite |
+| UI | Tailwind CSS v4, shadcn/ui on Radix, Zustand, Zod |
+| Routing / data | TanStack Router, TanStack Query |
+| API client | `openapi-fetch`, types generated from the live OpenAPI schema |
+| Tests | Pytest, `pytest-cov`, a real Postgres via testcontainers |
+| Tooling | mise, uv, Ruff, mypy, pre-commit |
+
+## Getting started
+
+You need **Docker** and [**mise**](https://mise.jdx.dev), which pins Python and uv and
+runs the project tasks.
 
 ```bash
-# build image, start containers (detached) and run migrations + db seed
+git clone https://github.com/PandyaSumit/repwise.git
+cd repwise
+
+# builds the image, starts the stack, applies migrations, seeds the exercise catalogue
 mise run dev
 ```
 
-alternatively you can use docker commands directly:
-```bash
+Then the frontend:
 
-docker compose build
-docker compose up -d 
-docker compose exec app alembic upgrade head
-docker compose exec app python -m scripts.seed --env=dev
-```
-or 
 ```bash
-docker compose build --no-cache
-docker compose up -d --force-recreate
-docker compose exec app alembic upgrade head
-docker compose exec app python -m scripts.seed --env=dev
+cd frontend
+npm install
+npm run gen:api     # generate TS types from the running API schema
+npm run dev
 ```
 
-next time you can just start the stack:
-```bash
-mise run up
-# or directly
-docker compose up -d
-```
+| Service | URL |
+| --- | --- |
+| Frontend | http://localhost:5173 |
+| API | http://localhost:8000 |
+| Swagger UI | http://localhost:8000/docs |
+| Liveness / readiness | http://localhost:8000/health and `/ready` |
 
-to (re)initialize the db:
-```bash
-mise run migrate && mise run seed
-```
+All API routes sit under **`/api/v1`** — for example `GET /api/v1/exercises/all`.
+`/health`, `/ready` and the docs are deliberately unprefixed so probes do not depend
+on the API version.
 
-to stop the stack:
-```bash
-mise run down
-```
+### Everyday commands
 
-to run tests (spins a Postgres testcontainer — needs Docker):
 ```bash
-mise run test          # full suite
-mise run test-cov      # with coverage
-```
-
-to lint / type-check:
-```bash
+mise run up            # start the stack
+mise run down          # stop it
+mise run migrate       # alembic upgrade head
+mise run makemigration # autogenerate a revision
+mise run seed          # reseed the dev database
+mise run test          # full suite against a Postgres testcontainer
+mise run test-cov      # ...with coverage
 mise run lint          # ruff format --check + ruff check + mypy
 mise run lint-fix      # auto-format and fix
 ```
 
-alembic commands (run inside the app container):
+If you would rather not use mise, every task maps to plain Docker Compose:
 
 ```bash
-mise run migrate         # upgrade to head
-mise run makemigration   # autogenerate a revision
-# or directly:
+docker compose up -d --build
 docker compose exec app alembic upgrade head
-docker compose exec app alembic downgrade -1
+docker compose exec app python -m scripts.seed --env=dev
 ```
 
-### Configuration
-All settings come from `.env.defaults` (committed dummy values). Override any of
-them with a git-ignored `.env` or real environment variables. Tests set `ENV=test`
-and get their database from a Postgres testcontainer.
+## Configuration
 
-`mise run dev` seeds the database and creates the first superuser from those defaults:
-```
-FIRST_SUPERUSER_USERNAME=admin
-FIRST_SUPERUSER_EMAIL=admin@example.com
-FIRST_SUPERUSER_PASSWORD=changeme
-```
-Change them via a local `.env` before running against anything real.
+Settings load from `.env.defaults`, which holds **committed dummy values for local dev
+only**. Override them with a git-ignored `.env` or real environment variables.
 
-So as you first user is created and app is running you need to generate JWT Token to access different endpoints. To do that use:
-```bash
-curl -X 'POST' \
-  'http://localhost:8000/api/v1/auth/login' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'grant_type=&username=admin%40example.com&password=changeme&scope=&client_id=&client_secret='
-```
-In response you will receive something like this:
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ...",
-  "token_type": "bearer"
-}
-```
-And you need to use it in headers when calling other endpoints eg:
-```bash
-curl -X 'GET' \
-  'http://localhost:8000/api/v1/exercises/my?skip=0&limit=10' \
-  -H 'accept: application/json' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDMzMzY5MDYsInN1YiI6IjEifQ.mnbKswazYV8pBv5JWlHv-qJ8fHZ4msW6yWwvRWzKUz4'
-```
+| Group | Variables |
+| --- | --- |
+| App | `PROJECT_NAME`, `API_VERSION`, `SERVER_HOST`, `SERVER_PORT` |
+| Security | `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `REFRESH_TOKEN_EXPIRE_DAYS` |
+| Database | `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` |
+| Pool | `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_RECYCLE_SECONDS` |
+| Bootstrap | `FIRST_SUPERUSER_USERNAME`, `FIRST_SUPERUSER_EMAIL`, `FIRST_SUPERUSER_PASSWORD` |
+| Exposure | `CORS_ORIGINS`, `ALLOWED_HOSTS` (comma-separated, `*` means any) |
 
-To register new user (it will be normal user not superuser, so some routes won't be available)
-```bash
-curl -X 'POST' \
-  'http://localhost:8000/api/v1/auth/register' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "email": "mynewuser@mail.com",
-  "password": "mypassword",
-  "full_name": "My User"
-}'
+The settings class refuses to start with the committed dev secret or the default
+superuser password once `ENV` is anything but local, so the placeholders cannot
+silently reach production.
+
+Tests run with `ENV=test` against a testcontainer database, so the suite never touches
+your dev data.
+
+## Repository layout
+
+```
+.
+├── repwise/
+│   ├── api/routes/     FastAPI routers, one per resource
+│   ├── services/       business rules and ownership enforcement
+│   ├── crud/           generic async repository layer
+│   ├── models/         SQLAlchemy declarative models
+│   ├── schemas/        Pydantic request and response models
+│   ├── database/       engine, session and base class
+│   ├── config.py       validated settings
+│   └── security.py     hashing and JWT handling
+├── frontend/
+│   └── src/
+│       ├── features/   one folder per domain area
+│       ├── api/        generated schema and typed client
+│       └── components/ shared UI, shadcn primitives in ui/
+├── migrations/         Alembic revisions
+├── scripts/            seeding and catalogue import
+├── resources/          exercises.csv, the seed catalogue
+└── tests/
 ```
 
-You can also do everything by using fast api docs which are more user friendly and more convenient way to play with api. To do that check http://localhost:8000/docs (your app needs to run)
+## Credits
 
+Repwise is a fork of [gymhero](https://github.com/JakubPluta/gymhero) by
+[@JakubPluta](https://github.com/JakubPluta), released under the MIT license. Thanks
+for the groundwork.
 
+## License
 
-## Possible future work
-- Default training plans (FBW / PPL / Split) seeded for every user
-- Redis cache for the exercise catalog
+[MIT](LICENSE).
