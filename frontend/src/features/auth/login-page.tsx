@@ -39,7 +39,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthShell title="Welcome back" description="Sign in to your gymhero account">
+    <AuthShell title="Welcome back" description="Sign in to your Repwise account">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField

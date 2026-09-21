@@ -23,7 +23,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from gymhero.models import Base
+from repwise.models import Base
 
 target_metadata = Base.metadata
 
@@ -34,10 +34,10 @@ target_metadata = Base.metadata
 
 section = config.config_ini_section
 config.set_section_option(
-    section, "POSTGRES_USER", os.environ.get("POSTGRES_USER", "gymhero")
+    section, "POSTGRES_USER", os.environ.get("POSTGRES_USER", "repwise")
 )
 config.set_section_option(
-    section, "POSTGRES_PASSWORD", os.environ.get("POSTGRES_PASSWORD", "gymhero")
+    section, "POSTGRES_PASSWORD", os.environ.get("POSTGRES_PASSWORD", "repwise")
 )
 config.set_section_option(
     section, "POSTGRES_HOST", os.environ.get("POSTGRES_HOST", "localhost")

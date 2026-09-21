@@ -2,8 +2,8 @@ import pytest
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from gymhero.models.level import Level
-from gymhero.models.user import User
+from repwise.models.level import Level
+from repwise.models.user import User
 from tests.helpers import auth_headers, page_items
 
 
@@ -181,7 +181,7 @@ async def test_delete_level_db_error_returns_clean_500_without_leak(
     # get_one now yields a non-Level object, so the delete blows up inside the
     # service; the error handler must map that to a generic 500 with no leak.
     mocker.patch(
-        "gymhero.crud.base.CRUDRepository.get_one", return_value=_FakeSuperuser()
+        "repwise.crud.base.CRUDRepository.get_one", return_value=_FakeSuperuser()
     )
     response = await client.delete("/api/v1/levels/4242", headers=auth_headers(4242))
     assert response.status_code == 500
@@ -193,7 +193,7 @@ async def test_update_level_db_error_returns_clean_500_without_leak(
     client: AsyncClient, mocker: MockerFixture
 ) -> None:
     mocker.patch(
-        "gymhero.crud.base.CRUDRepository.get_one", return_value=_FakeSuperuser()
+        "repwise.crud.base.CRUDRepository.get_one", return_value=_FakeSuperuser()
     )
     response = await client.put(
         "/api/v1/levels/4242",

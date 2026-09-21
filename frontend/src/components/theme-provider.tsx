@@ -18,7 +18,7 @@ const ThemeProviderContext = createContext<ThemeProviderState | null>(null)
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
-  storageKey = 'gymhero-theme',
+  storageKey = 'repwise-theme',
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(
     // localStorage is a serialization boundary; the stored value is trusted to

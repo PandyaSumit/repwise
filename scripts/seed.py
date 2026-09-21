@@ -1,4 +1,4 @@
-from gymhero.log import get_logger
+from repwise.log import get_logger
 from scripts.core.seed import build_argparser, seed_database, seed_superuser
 
 log = get_logger(__name__)

@@ -25,7 +25,7 @@ async def test_unhandled_error_returns_clean_500_with_request_id(
     # A raw (non-domain, non-DB) error must map to a generic 500 that still
     # carries the request id and never leaks internals.
     mocker.patch(
-        "gymhero.crud.base.CRUDRepository.get_many", side_effect=ValueError("boom")
+        "repwise.crud.base.CRUDRepository.get_many", side_effect=ValueError("boom")
     )
     response = await client.get(
         "/api/v1/levels/all", headers={"X-Request-ID": "trace-500"}

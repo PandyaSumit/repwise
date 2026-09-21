@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gymhero.models.body_part import BodyPart
+from repwise.models.body_part import BodyPart
 from tests.helpers import auth_headers, create_body_part, page_items
 
 

@@ -4,8 +4,8 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gymhero.models.training_plan import TrainingPlan
-from gymhero.models.user import User
+from repwise.models.training_plan import TrainingPlan
+from repwise.models.user import User
 from tests.helpers import (
     create_training_plan,
     create_training_unit,

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 
-from gymhero.security import (
+from repwise.security import (
     create_access_token,
     create_refresh_token,
     decode_token,

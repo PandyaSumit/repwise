@@ -1,8 +1,8 @@
 [project]
-name = "gymhero"
+name = "repwise"
 version = "0.1.0"
-description = "Simple application to note down your workouts details"
-authors = [{ name = "jp", email = "plutakuba@gmail.com" }]
+description = "Strength-training API and dashboard for building exercise libraries and structured training plans"
+authors = [{ name = "Sumit Pandya", email = "pandyasumit01@gmail.com" }]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -67,13 +67,13 @@ skip = "migrations/**/*,migrations,migrations/*.py"
 
 
 [tool.coverage.run]
-source = ["gymhero"]
+source = ["repwise"]
 branch = true
 concurrency = ["thread", "greenlet"]
 omit = [
-    "gymhero/server.py",
-    "gymhero/log.py",
-    "gymhero/exceptions.py",
+    "repwise/server.py",
+    "repwise/log.py",
+    "repwise/exceptions.py",
     "*/__init__.py",
 ]
 
@@ -103,13 +103,13 @@ testpaths = ["tests"]
 python_version = "3.13"
 strict = true
 plugins = ["pydantic.mypy"]
-packages = ["gymhero"]
+packages = ["repwise"]
 ignore_missing_imports = true
 warn_unused_ignores = true
 
 # FastAPI route handlers define their contract via response_model, not the
 # function's own return annotation — don't force return types on that thin layer.
 [[tool.mypy.overrides]]
-module = "gymhero.api.routes.*"
+module = "repwise.api.routes.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false

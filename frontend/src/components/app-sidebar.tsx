@@ -31,7 +31,7 @@ export function AppSidebar() {
           <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Dumbbell className="size-4" />
           </div>
-          <span className="text-base font-semibold tracking-tight">gymhero</span>
+          <span className="text-base font-semibold tracking-tight">Repwise</span>
         </div>
       </SidebarHeader>
       <SidebarContent>

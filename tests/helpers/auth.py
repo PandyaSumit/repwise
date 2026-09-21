@@ -1,5 +1,5 @@
-from gymhero.models.user import User
-from gymhero.security import create_access_token
+from repwise.models.user import User
+from repwise.security import create_access_token
 
 
 def auth_headers(user: User | int) -> dict[str, str]:

@@ -1,0 +1,209 @@
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from repwise.api.dependencies import (
+    get_current_active_user,
+    get_current_superuser,
+    get_pagination_params,
+)
+from repwise.crud import training_unit_crud
+from repwise.database.db import get_db
+from repwise.models import TrainingUnit
+from repwise.models.user import User
+from repwise.schemas.common import Page
+from repwise.schemas.training_unit import (
+    PrescriptionUpdate,
+    TrainingUnitCreate,
+    TrainingUnitExerciseOut,
+    TrainingUnitInDB,
+    TrainingUnitUpdate,
+)
+from repwise.services import training_unit as training_unit_service
+
+router = APIRouter()
+
+
+@router.get(
+    "/all",
+    response_model=Page[TrainingUnitInDB],
+    status_code=status.HTTP_200_OK,
+)
+async def get_all_training_units(
+    db: AsyncSession = Depends(get_db),
+    pagination_params: tuple[int, int] = Depends(get_pagination_params),
+    q: str | None = Query(None),
+    user: User = Depends(get_current_superuser),
+):
+    skip, limit = pagination_params
+    items, total = await training_unit_service.list_training_units(
+        db, q=q, skip=skip, limit=limit
+    )
+    return {"items": items, "total": total, "skip": skip, "limit": limit}
+
+
+@router.get(
+    "/all/my",
+    response_model=Page[TrainingUnitInDB],
+    status_code=status.HTTP_200_OK,
+)
+async def get_all_training_units_for_owner(
+    db: AsyncSession = Depends(get_db),
+    pagination_params: tuple[int, int] = Depends(get_pagination_params),
+    q: str | None = Query(None),
+    user: User = Depends(get_current_active_user),
+):
+    skip, limit = pagination_params
+    items, total = await training_unit_service.list_training_units(
+        db, owner_id=user.id, q=q, skip=skip, limit=limit
+    )
+    return {"items": items, "total": total, "skip": skip, "limit": limit}
+
+
+@router.get(
+    "/{training_unit_id}",
+    response_model=TrainingUnitInDB,
+    status_code=status.HTTP_200_OK,
+)
+async def get_training_unit_by_id(
+    training_unit_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return await training_unit_service.get_training_unit(
+        db, training_unit_id=training_unit_id, actor=user
+    )
+
+
+@router.get(
+    "/name/{training_unit_name}",
+    response_model=TrainingUnitInDB,
+    status_code=status.HTTP_200_OK,
+)
+async def get_training_unit_by_name(
+    training_unit_name: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return await training_unit_service.get_training_unit_by_name(
+        db, name=training_unit_name, actor=user
+    )
+
+
+@router.get(
+    "/name/{training_unit_name}/superuser",
+    response_model=list[TrainingUnitInDB],
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def get_training_units_by_name(
+    training_unit_name: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_superuser),
+):
+    return await training_unit_crud.get_many(
+        db, TrainingUnit.name == training_unit_name
+    )
+
+
+@router.post("/", response_model=TrainingUnitInDB, status_code=status.HTTP_201_CREATED)
+async def create_training_unit(
+    training_unit_in: TrainingUnitCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return await training_unit_service.create_training_unit(
+        db, data=training_unit_in, owner=user
+    )
+
+
+@router.put(
+    "/{training_unit_id}",
+    response_model=TrainingUnitInDB,
+    status_code=status.HTTP_200_OK,
+)
+async def update_training_unit(
+    training_unit_id: int,
+    training_unit_update: TrainingUnitUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return await training_unit_service.update_training_unit(
+        db, training_unit_id=training_unit_id, data=training_unit_update, actor=user
+    )
+
+
+@router.delete("/{training_unit_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_training_unit(
+    training_unit_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    await training_unit_service.delete_training_unit(
+        db, training_unit_id=training_unit_id, actor=user
+    )
+
+
+@router.put(
+    "/{training_unit_id}/exercises/{exercise_id}",
+    response_model=TrainingUnitInDB,
+    status_code=status.HTTP_200_OK,
+)
+async def add_exercise_to_training_unit(
+    training_unit_id: int,
+    exercise_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return await training_unit_service.add_exercise(
+        db, training_unit_id=training_unit_id, exercise_id=exercise_id, actor=user
+    )
+
+
+@router.patch(
+    "/{training_unit_id}/exercises/{exercise_id}",
+    response_model=TrainingUnitInDB,
+    status_code=status.HTTP_200_OK,
+)
+async def set_exercise_prescription(
+    training_unit_id: int,
+    exercise_id: int,
+    prescription: PrescriptionUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return await training_unit_service.set_prescription(
+        db,
+        training_unit_id=training_unit_id,
+        exercise_id=exercise_id,
+        data=prescription,
+        actor=user,
+    )
+
+
+@router.get(
+    "/{training_unit_id}/exercises", response_model=list[TrainingUnitExerciseOut]
+)
+async def get_exercises_in_training_unit(
+    training_unit_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return await training_unit_service.get_exercises(
+        db, training_unit_id=training_unit_id, actor=user
+    )
+
+
+@router.delete(
+    "/{training_unit_id}/exercises/{exercise_id}",
+    response_model=TrainingUnitInDB,
+    status_code=status.HTTP_200_OK,
+)
+async def remove_exercise_from_training_unit(
+    training_unit_id: int,
+    exercise_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return await training_unit_service.remove_exercise(
+        db, training_unit_id=training_unit_id, exercise_id=exercise_id, actor=user
+    )

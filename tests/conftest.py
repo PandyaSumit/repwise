@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.pool import NullPool
 from testcontainers.postgres import PostgresContainer
 
-from gymhero.config import Settings, get_settings
-from gymhero.models import Base
+from repwise.config import Settings, get_settings
+from repwise.models import Base
 
 # One async engine (asyncpg) on a Postgres testcontainer drives every DB test.
 

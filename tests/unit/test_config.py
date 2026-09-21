@@ -4,7 +4,7 @@ import dotenv
 import pytest
 from pydantic import SecretStr, ValidationError
 
-from gymhero.config import get_settings
+from repwise.config import get_settings
 
 dotenv.load_dotenv(".env.defaults")
 

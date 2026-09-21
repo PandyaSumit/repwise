@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 
-from gymhero.config import Settings
-from gymhero.log import get_logger
-from gymhero.models.user import User
-from gymhero.security import get_password_hash
+from repwise.config import Settings
+from repwise.log import get_logger
+from repwise.models.user import User
+from repwise.security import get_password_hash
 
 log = get_logger(__name__)
 

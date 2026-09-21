@@ -5,12 +5,12 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from gymhero.main import app
-from gymhero.models import Base
-from gymhero.models.body_part import BodyPart
-from gymhero.models.exercise import ExerciseType
-from gymhero.models.level import Level
-from gymhero.models.user import User
+from repwise.main import app
+from repwise.models import Base
+from repwise.models.body_part import BodyPart
+from repwise.models.exercise import ExerciseType
+from repwise.models.level import Level
+from repwise.models.user import User
 from tests.helpers import (
     auth_headers,
     create_body_part,

@@ -1,6 +1,6 @@
-# gymhero — frontend
+# repwise — frontend
 
-React SPA for the gymhero API. Vite, TypeScript, Tailwind + shadcn/ui, TanStack Router/Query.
+React SPA for the repwise API. Vite, TypeScript, Tailwind + shadcn/ui, TanStack Router/Query.
 
 ## Run
 

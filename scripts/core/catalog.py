@@ -2,10 +2,10 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
-from gymhero.log import get_logger
-from gymhero.models.body_part import BodyPart
-from gymhero.models.exercise import Exercise, ExerciseType
-from gymhero.models.level import Level
+from repwise.log import get_logger
+from repwise.models.body_part import BodyPart
+from repwise.models.exercise import Exercise, ExerciseType
+from repwise.models.level import Level
 from scripts.core.resources import ExerciseRow
 
 log = get_logger(__name__)

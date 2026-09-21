@@ -19,7 +19,7 @@ export const useAuthStore = create<AuthState>()(
       clear: () => set({ accessToken: null, refreshToken: null }),
     }),
     {
-      name: 'gymhero-auth',
+      name: 'repwise-auth',
       partialize: (state) => ({ refreshToken: state.refreshToken }),
     },
   ),

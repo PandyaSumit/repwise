@@ -1,8 +1,8 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gymhero.models.exercise import Exercise
-from gymhero.models.user import User
+from repwise.models.exercise import Exercise
+from repwise.models.user import User
 from tests.helpers import auth_headers, create_exercise
 
 

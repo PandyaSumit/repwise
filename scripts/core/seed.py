@@ -1,9 +1,9 @@
 from argparse import ArgumentParser
 
-from gymhero.config import get_settings
-from gymhero.database.db import get_ctx_db
-from gymhero.log import get_logger
-from gymhero.models.user import User
+from repwise.config import get_settings
+from repwise.database.db import get_ctx_db
+from repwise.log import get_logger
+from repwise.models.user import User
 from scripts.core.catalog import (
     create_body_parts,
     create_exercise_types,
@@ -68,7 +68,7 @@ def seed_superuser(env: str) -> User:
 
 
 def build_argparser() -> ArgumentParser:
-    parser = ArgumentParser(description="Seed the GymHero database.")
+    parser = ArgumentParser(description="Seed the Repwise database.")
     parser.add_argument(
         "--env",
         default="dev",

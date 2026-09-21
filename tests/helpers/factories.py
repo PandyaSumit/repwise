@@ -2,13 +2,13 @@ import itertools
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gymhero.models.body_part import BodyPart
-from gymhero.models.exercise import Exercise, ExerciseType
-from gymhero.models.level import Level
-from gymhero.models.training_plan import TrainingPlan
-from gymhero.models.training_unit import TrainingUnit, TrainingUnitExercise
-from gymhero.models.user import User
-from gymhero.security import get_password_hash
+from repwise.models.body_part import BodyPart
+from repwise.models.exercise import Exercise, ExerciseType
+from repwise.models.level import Level
+from repwise.models.training_plan import TrainingPlan
+from repwise.models.training_unit import TrainingUnit, TrainingUnitExercise
+from repwise.models.user import User
+from repwise.security import get_password_hash
 
 # Long enough for the registration strength rule (>= 8) so factory users can
 # also log in through /auth.

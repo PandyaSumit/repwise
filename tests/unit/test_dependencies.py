@@ -3,16 +3,16 @@ from unittest.mock import patch
 import pytest
 from fastapi import HTTPException
 
-from gymhero.api.dependencies import (
+from repwise.api.dependencies import (
     get_current_active_user,
     get_current_superuser,
     get_current_user,
     get_pagination_params,
     get_token,
 )
-from gymhero.crud.user import user_crud
-from gymhero.models.user import User
-from gymhero.schemas.auth import TokenPayload
+from repwise.crud.user import user_crud
+from repwise.models.user import User
+from repwise.schemas.auth import TokenPayload
 
 
 def test_get_pagination_params_defaults() -> None:

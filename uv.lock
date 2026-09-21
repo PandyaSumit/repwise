@@ -590,7 +590,7 @@ wheels = [
 ]
 
 [[package]]
-name = "gymhero"
+name = "repwise"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

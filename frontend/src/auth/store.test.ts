@@ -29,7 +29,7 @@ describe('useAuthStore', () => {
 
   it('persists only the refresh token to localStorage', () => {
     useAuthStore.getState().setTokens('access-secret', 'refresh-secret')
-    const raw = localStorage.getItem('gymhero-auth')
+    const raw = localStorage.getItem('repwise-auth')
     expect(raw).not.toBeNull()
     const persisted = JSON.parse(raw ?? '{}')
     expect(persisted.state.refreshToken).toBe('refresh-secret')

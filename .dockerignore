@@ -1,5 +1,5 @@
 # Keep the production image to runtime code only.
-# Shipped: gymhero/, scripts/, migrations/, resources/, alembic.ini, pyproject.toml, uv.lock
+# Shipped: repwise/, scripts/, migrations/, resources/, alembic.ini, pyproject.toml, uv.lock
 
 # Secrets / env — never bake into the image (prod injects real env vars)
 .env

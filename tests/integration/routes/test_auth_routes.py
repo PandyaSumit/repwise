@@ -1,6 +1,6 @@
 from httpx import AsyncClient
 
-from gymhero.models.user import User
+from repwise.models.user import User
 from tests.helpers import DEFAULT_PASSWORD
 
 

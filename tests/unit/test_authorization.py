@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from gymhero.api.authorization import authorize_owner_or_superuser
-from gymhero.exceptions import PermissionDeniedError
+from repwise.api.authorization import authorize_owner_or_superuser
+from repwise.exceptions import PermissionDeniedError
 
 
 def _actor(user_id: int, *, is_superuser: bool = False) -> SimpleNamespace:
